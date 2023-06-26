@@ -12,7 +12,6 @@ mod neuro;
 mod progress_bar;
 mod world;
 mod source;
-mod object;
 mod camera;
 
 use std::{time, thread};

@@ -12,7 +12,6 @@ use crate::kinetic::*;
 use crate::ui::*;
 use crate::source::*;
 use crate::util::Signals;
-use crate::object::*;
 use crate::world::*;
 use crate::camera::*;
 
@@ -99,7 +98,7 @@ impl Simulation {
 
     pub fn autorun_new_sim(&mut self) {
         self.signals.new_sim = true;
-        self.signals.new_sim_name = "Simulation".to_string();
+        self.signals.new_sim_name = "MOLECULES".to_string();
     }
 
     fn update_molecules(&mut self) {
