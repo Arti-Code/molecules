@@ -33,6 +33,7 @@ pub struct Simulation {
     pub selected: u64,
     pub mouse_state: MouseState,
     pub molecules: MoleculesBox,
+    pub static_elements: StaticElementBox,
 }
 
 struct CamConfig {
@@ -64,6 +65,7 @@ impl Simulation {
             select_phase: 0.0,
             mouse_state: MouseState { pos: Vec2::NAN},
             molecules: MoleculesBox::new(),
+            static_elements: StaticElementBox::new(),
             //sources: SourcesBox::new(),
         }
     }
@@ -90,9 +92,11 @@ impl Simulation {
     }
 
     pub fn init(&mut self) {
-        self.world.build();
+        //self.world.build();
         let molecules_num = self.config.molecules_init_num;
         self.molecules.add_many_molecules(1024, &mut self.world);
+        let static_elem = StaticElement::new(Vec2::new(200.0, 200.0), 25.0, 25.0, GRAY);
+        //_ = self.static_elements.add_element(static_elem, &mut self.world);
         //self.sources.add_many(48);
     }
 
@@ -105,6 +109,9 @@ impl Simulation {
         for (id, molecule) in self.molecules.get_iter_mut() {
             molecule.update2(&mut self.world);
         }
+        //for (id, fixed) in self.static_elements.get_iter_mut() {
+        //    fixed.update2(&mut self.world);
+        //}
         let dt = self.sim_state.dt;
     }
 
@@ -124,6 +131,7 @@ impl Simulation {
         draw_rectangle_lines(0.0, 0.0, self.world_size.x, self.world_size.y, 3.0, WHITE);
         self.draw_grid(50);
         self.draw_molecules();
+        self.draw_statics();
     }
 
     fn draw_molecules(&self) {
@@ -138,6 +146,12 @@ impl Simulation {
             },
             None => {},
         };
+    }
+
+    fn draw_statics(&self) {
+        for (id, static_elem) in self.static_elements.get_iter() {
+            static_elem.draw();
+        }
     }
 
     fn draw_grid(&self, cell_size: u32) {

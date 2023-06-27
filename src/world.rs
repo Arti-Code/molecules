@@ -96,28 +96,53 @@ impl World {
         _ = self.colliders.insert_with_parent(edge_down, edge_handle1, &mut self.rigid_bodies);
     }
 
-    pub fn add_circle_body(&mut self, position: &Vec2, radius: f32) -> RigidBodyHandle {
+    pub fn add_circle_body(&mut self, position: &Vec2, radius: f32, field_radius: f32) -> RigidBodyHandle {
         let iso = Isometry::new(Vector2::new(position.x, position.y), 0.0);
         //let iso = Isometry::new(Vector2::new(0.0, 0.0), 0.0);
         let ball = RigidBodyBuilder::dynamic()
-            //.linvel(Vector2::new(gen_range(-1.0, 1.0), gen_range(-1.0, 1.0))*20.0)
+            .linvel(Vector2::new(gen_range(-1.0, 1.0), gen_range(-1.0, 1.0))*MOLECULE_SPEED)
             .position(iso).linear_damping(0.0)
-            .can_sleep(false);
-        let mut collider = ColliderBuilder::ball(radius)
+            .can_sleep(false).build();
+        let collider = ColliderBuilder::ball(radius)
             .active_collision_types(ActiveCollisionTypes::default() | ActiveCollisionTypes::DYNAMIC_DYNAMIC | ActiveCollisionTypes::DYNAMIC_FIXED)
             //.active_events(ActiveEvents::COLLISION_EVENTS)
-            .restitution(1.0).friction(0.0)
+            .restitution(0.9).friction(0.1)
             .restitution_combine_rule(CoefficientCombineRule::Max).friction_combine_rule(CoefficientCombineRule::Min)
+            .build();
+        let field = ColliderBuilder::ball(field_radius).active_collision_types(ActiveCollisionTypes::default() | ActiveCollisionTypes::DYNAMIC_KINEMATIC)
+            .active_events(ActiveEvents::COLLISION_EVENTS).sensor(true)
             .build();
         //collider.set_active_events(ActiveEvents::COLLISION_EVENTS);
         let rb_handle = self.rigid_bodies.insert(ball);
         let coll_handle = self.colliders.insert_with_parent(collider, rb_handle, &mut self.rigid_bodies);
+        let field_handle = self.colliders.insert_with_parent(field, rb_handle, &mut self.rigid_bodies);
         return rb_handle;
     }
     
+    pub fn add_static_body(&mut self, position: &Vec2, width: f32, height: f32 ) -> RigidBodyHandle {
+        let iso = Isometry::new(Vector2::new(position.x, position.y), 0.0);
+        let cube = RigidBodyBuilder::dynamic().position(iso).can_sleep(false).build();
+        let mut collider = ColliderBuilder::cuboid(width, height)
+            .active_collision_types(ActiveCollisionTypes::default() | ActiveCollisionTypes::DYNAMIC_FIXED)
+            //.active_events(ActiveEvents::COLLISION_EVENTS)
+            .restitution(1.0).friction(0.0).build();
+        //collider.set_active_events(ActiveEvents::COLLISION_EVENTS);
+        let rb_handle = self.rigid_bodies.insert(cube);
+        let coll_handle = self.colliders.insert_with_parent(collider, rb_handle, &mut self.rigid_bodies);
+        return rb_handle;
+    }
+
     fn reciv_events(&self) {
         while let Ok(collision_event) = self.collision_recv.try_recv() {
-            println!("COLLISION!");
+            if collision_event.sensor() {
+                match collision_event {
+                    CollisionEvent::Started(c1, c2, CollisionEventFlags::SENSOR) => {
+                        println!("COLLISION STARTED!");
+                    },
+                    CollisionEvent::Stopped(_, _, _) => {},
+                    _ => {},
+                }
+            }
         }
     }
 
@@ -167,7 +192,19 @@ impl World {
         let rb = self.rigid_bodies.get(handle).expect("handle to non-existent rigid body");
         let iso = rb.position();
         let (pos, rot) = self.iso_to_vec2_rot(iso);
-        let data = PhysicsData {position: pos, rotation: rot};
+        let colliders = rb.colliders();
+        let field_collider: ColliderHandle;
+        let mut field_rad: f32=f32::NAN;
+        for c in colliders.iter() {
+            if let Some(fc) = self.colliders.get(*c) {
+                if fc.is_sensor() {
+                    if let Some(circle) = fc.shape().as_ball() {
+                        field_rad = circle.radius;
+                    }
+                }
+            }
+        }
+        let data = PhysicsData {position: pos, rotation: rot, field_radius: field_rad};
         return data;
     }
 }
@@ -176,4 +213,5 @@ impl World {
 pub struct PhysicsData {
     pub position: Vec2,
     pub rotation: f32,
+    pub field_radius: f32,
 }

@@ -7,15 +7,15 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'live2'",
+            "name": "Debug executable 'molecules'",
             "cargo": {
                 "args": [
                     "run",
-                    "--bin=live2",
-                    "--package=live2"
+                    "--bin=molecules",
+                    "--package=molecules"
                 ],
                 "filter": {
-                    "name": "live2",
+                    "name": "molecules",
                     "kind": "bin"
                 }
             },
@@ -25,16 +25,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in executable 'live2'",
+            "name": "Debug unit tests in executable 'molecules'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=live2",
-                    "--package=live2"
+                    "--bin=molecules",
+                    "--package=molecules"
                 ],
                 "filter": {
-                    "name": "live2",
+                    "name": "molecules",
                     "kind": "bin"
                 }
             },
